@@ -1,9 +1,12 @@
 import { ethers } from 'ethers';
 import { useEffect, useState } from 'react';
 import deploy from './deploy';
-import Escrow from './Escrow';
+import EscrowComponent from './Escrow';
+import Escrow from './artifacts/contracts/Escrow.sol/Escrow'
 
 const provider = new ethers.providers.Web3Provider(window.ethereum);
+const newContractUrl = "http://localhost:3005/contract/new"
+const getContractsUrl = "http://localhost:3005/contract/all"
 
 export async function approve(escrowContract, signer) {
   const approveTxn = await escrowContract.connect(signer).approve();
@@ -26,12 +29,68 @@ function App() {
     getAccounts();
   }, [account]);
 
+	async function getEscrows() {
+		const contractsRes = await fetch(getContractsUrl) 
+		const escrowsData = await contractsRes.json()
+		console.log("Escrows data: " + JSON.stringify(escrowsData))
+		escrowsData.contracts.forEach(escrow => {
+			let escrowContract = new ethers.Contract(escrow.address, Escrow.abi, signer)
+			const existingEscrow = {
+				address: escrow.address,
+				arbiter: escrow.arbiter,
+				beneficiary: escrow.beneficiary,
+				value: escrow.value.toString(),
+				handleApprove: async () => {
+					escrowContract.on('Approved', () => {
+						document.getElementById(escrow.address).className =
+					'complete';
+						document.getElementById(escrow.address).innerText =
+					"✓ It's been approved!";
+					})
+					await approve(escrowContract, signer);
+				}
+			}
+
+			// setEscrows([...escrows, existingEscrow])
+		})
+	}
+
+	useEffect(() => {
+		console.log("Running useEffect hook on escrows arr")
+		getEscrows()
+		console.log("Completed useEffect hook on escrows arr")
+		console.log("Escrows content: " + JSON.stringify(escrows))
+	});
+
   async function newContract() {
+		console.log("newContract function called")
     const beneficiary = document.getElementById('beneficiary').value;
     const arbiter = document.getElementById('arbiter').value;
-    const value = ethers.BigNumber.from(document.getElementById('wei').value);
+    const formValue = document.getElementById('eth').value;
+    const value = ethers.utils.parseEther(formValue)
+
     const escrowContract = await deploy(signer, arbiter, beneficiary, value);
 
+		const escrowObject = {
+			address: escrowContract.address,
+			beneficiary: escrowContract.beneficiary,
+			arbiter: escrowContract.arbiter,
+			value: value.toString()
+		}
+    try {
+			const newContractResponse = await fetch(newContractUrl, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(escrowObject)
+			})
+			console.log("New contract response from server: " + JSON.stringify(newContractResponse))
+
+		} catch (err) {
+			console.log("Contract not saved")
+			throw Error(err)
+		}
 
     const escrow = {
       address: escrowContract.address,
@@ -51,6 +110,7 @@ function App() {
     };
 
     setEscrows([...escrows, escrow]);
+		console.log("newContract function finished")
   }
 
   return (
@@ -68,8 +128,8 @@ function App() {
         </label>
 
         <label>
-          Deposit Amount (in Wei)
-          <input type="text" id="wei" />
+          Deposit Amount (in Eth)
+          <input type="text" id="eth" />
         </label>
 
         <div
@@ -90,7 +150,7 @@ function App() {
 
         <div id="container">
           {escrows.map((escrow) => {
-            return <Escrow key={escrow.address} {...escrow} />;
+            return <EscrowComponent key={escrow.address} {...escrow} />;
           })}
         </div>
       </div>
