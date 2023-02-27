@@ -7,6 +7,8 @@ module.exports = {
     artifacts: "./app/src/artifacts",
   },
   networks: {
+    hardhat: {
+    },
     goerli: {
       url: process.env.GOERLI_URL,
       accounts: [process.env.PRIV_KEY]
