@@ -19,6 +19,7 @@ function App() {
   const [signer, setSigner] = useState();
 
   useEffect(() => {
+		console.log("Running useEffect hook on accounts arr")
     async function getAccounts() {
       const accounts = await provider.send('eth_requestAccounts', []);
 
@@ -29,38 +30,45 @@ function App() {
     getAccounts();
   }, [account]);
 
-	async function getEscrows() {
-		const contractsRes = await fetch(getContractsUrl) 
-		const escrowsData = await contractsRes.json()
-		console.log("Escrows data: " + JSON.stringify(escrowsData))
-		escrowsData.contracts.forEach(escrow => {
-			let escrowContract = new ethers.Contract(escrow.address, Escrow.abi, signer)
-			const existingEscrow = {
-				address: escrow.address,
-				arbiter: escrow.arbiter,
-				beneficiary: escrow.beneficiary,
-				value: escrow.value.toString(),
-				handleApprove: async () => {
-					escrowContract.on('Approved', () => {
-						document.getElementById(escrow.address).className =
-					'complete';
-						document.getElementById(escrow.address).innerText =
-					"✓ It's been approved!";
-					})
-					await approve(escrowContract, signer);
-				}
-			}
-
-			// setEscrows([...escrows, existingEscrow])
-		})
-	}
 
 	useEffect(() => {
 		console.log("Running useEffect hook on escrows arr")
+		const controller = new AbortController()
+		async function getEscrows() {
+			const contractsRes = await fetch(getContractsUrl, {signal: controller.signal}) 
+			const escrowsData = await contractsRes.json()
+			console.log("Escrows data: " + JSON.stringify(escrowsData))
+			const escrowsProcessed = []
+			escrowsData.contracts.forEach(escrow => {
+				let escrowContract = new ethers.Contract(escrow.address, Escrow.abi, signer)
+				console.log()
+				const existingEscrow = {
+					address: escrow.address,
+					arbiter: escrow.arbiter,
+					beneficiary: escrow.beneficiary,
+					value: escrow.value.toString(),
+					handleApprove: async () => {
+						escrowContract.on('Approved', () => {
+							document.getElementById(escrow.address).className =
+						'complete';
+							document.getElementById(escrow.address).innerText =
+						"✓ It's been approved!";
+						})
+						await approve(escrowContract, signer);
+					}
+				}
+				console.log("Adding escrow: " + JSON.stringify(escrow))
+				setEscrows(escrows => [...escrows, existingEscrow])
+			})
+		}
 		getEscrows()
 		console.log("Completed useEffect hook on escrows arr")
 		console.log("Escrows content: " + JSON.stringify(escrows))
-	});
+		return () => {
+			console.log("Cleaning up effect: ")
+			controller.abort()
+		}
+	}, []);
 
   async function newContract() {
 		console.log("newContract function called")
@@ -73,8 +81,8 @@ function App() {
 
 		const escrowObject = {
 			address: escrowContract.address,
-			beneficiary: escrowContract.beneficiary,
-			arbiter: escrowContract.arbiter,
+			beneficiary: beneficiary,
+			arbiter: arbiter,
 			value: value.toString()
 		}
     try {
