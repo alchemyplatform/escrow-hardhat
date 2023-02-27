@@ -42,4 +42,5 @@ describe('Escrow', function () {
       expect(after.sub(before)).to.eq(deposit);
     });
   });
+
 });

@@ -2,6 +2,7 @@ export default function EscrowComponent({
   address,
   arbiter,
   beneficiary,
+  expireTime,
   value,
   handleApprove,
 }) {
@@ -15,6 +16,10 @@ export default function EscrowComponent({
         <li>
           <div> Beneficiary </div>
           <div> {beneficiary} </div>
+        </li>
+        <li>
+          <div> Minutes to approve </div>
+          <div> {expireTime} </div>
         </li>
         <li>
           <div> Value </div>

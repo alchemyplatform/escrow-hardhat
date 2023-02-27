@@ -38,7 +38,6 @@ function App() {
 			const contractsRes = await fetch(getContractsUrl, {signal: controller.signal}) 
 			const escrowsData = await contractsRes.json()
 			console.log("Escrows data: " + JSON.stringify(escrowsData))
-			const escrowsProcessed = []
 			escrowsData.contracts.forEach(escrow => {
 				let escrowContract = new ethers.Contract(escrow.address, Escrow.abi, signer)
 				console.log()
@@ -46,6 +45,7 @@ function App() {
 					address: escrow.address,
 					arbiter: escrow.arbiter,
 					beneficiary: escrow.beneficiary,
+          expireTime: escrow.expireTime,
 					value: escrow.value.toString(),
 					handleApprove: async () => {
 						escrowContract.on('Approved', () => {
@@ -75,14 +75,17 @@ function App() {
     const beneficiary = document.getElementById('beneficiary').value;
     const arbiter = document.getElementById('arbiter').value;
     const formValue = document.getElementById('eth').value;
-    const value = ethers.utils.parseEther(formValue)
+    const value = ethers.utils.parseEther(formValue);
+    const expireTime = Math.floor(document.getElementById('expireTime').value);
+    const expireTimeSeconds = expireTime * 60
 
-    const escrowContract = await deploy(signer, arbiter, beneficiary, value);
+    const escrowContract = await deploy(signer, arbiter, beneficiary, expireTimeSeconds, value);
 
 		const escrowObject = {
 			address: escrowContract.address,
 			beneficiary: beneficiary,
 			arbiter: arbiter,
+      expireTime: expireTime,
 			value: value.toString()
 		}
     try {
@@ -104,6 +107,7 @@ function App() {
       address: escrowContract.address,
       arbiter,
       beneficiary,
+      expireTime: expireTime,
       value: value.toString(),
       handleApprove: async () => {
         escrowContract.on('Approved', () => {
@@ -138,6 +142,11 @@ function App() {
         <label>
           Deposit Amount (in Eth)
           <input type="text" id="eth" />
+        </label>
+
+        <label>
+          Time to approve (in minutes)
+          <input type="text" id="expireTime" />
         </label>
 
         <div
