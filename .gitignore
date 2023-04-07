@@ -1,3 +1,4 @@
+.env
 app/dist
 app/artifacts
 cache
