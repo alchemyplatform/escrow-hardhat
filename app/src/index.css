@@ -1,12 +1,17 @@
+#root {
+  width: 100%;
+}
+
 body {
   background-color: #eee;
   display: flex;
   font-family: 'Muli', sans-serif;
 }
 
-.contract, .existing-contracts {
+.contract,
+.existing-contracts {
   margin: 20px;
-  display: inline-block;
+  display: block;
   padding: 40px;
   border: 1px solid #ddd;
   background-color: #fff;
