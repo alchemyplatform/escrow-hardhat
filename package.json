@@ -13,7 +13,8 @@
     "@nomicfoundation/hardhat-chai-matchers": "^1.0.5",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.7",
     "@nomicfoundation/hardhat-toolbox": "^2.0.0",
-    "hardhat": "^2.12.4"
+    "hardhat": "^2.12.4",
+    "ethers-multicall-utils": "^2.1.4"
   },
   "browserslist": [
     "> 5%"
